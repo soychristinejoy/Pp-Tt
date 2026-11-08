@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Phonics Fun!</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Canvas Confetti CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <!-- Google Font: Fredoka -->
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Fredoka', cursive, sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .perspective { perspective: 1000px; }
+    .transform-style-3d { transform-style: preserve-3d; }
+    .backface-hidden { backface-visibility: hidden; }
+    .rotate-y-180 { transform: rotateY(180deg); }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0px) scale(1); }
+      50% { transform: translateY(-8px) scale(1.03); }
+    }
+    .animate-float { animation: float 3s ease-in-out infinite; }
+
+    @keyframes popOut {
+      0% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.3); opacity: 0.8; }
+      100% { transform: scale(0); opacity: 0; }
+    }
+    .animate-pop { animation: popOut 0.3s forwards ease-out; }
+
+    .shake {
+      animation: shake 0.4s ease-in-out;
+    }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-6px); }
+      40%, 80% { transform: translateX(6px); }
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-b from-pink-100 via-purple-50 to-pink-200 min-h-screen flex flex-col justify-between text-slate-800 pb-6">
+
+  <!-- Header matching your design -->
+  <header class="w-full py-4 px-4 sticky top-0 z-50">
+    <div class="max-w-4xl mx-auto bg-white border-4 border-pink-300 rounded-full px-5 py-3 shadow-lg flex items-center justify-between gap-4">
+      
+      <!-- Left: Palette Icon & phonics fun! -->
+      <div class="flex items-center gap-3">
+        <div class="text-3xl">🎨</div>
+        <div class="leading-tight">
+          <h1 class="text-xl md:text-2xl font-extrabold text-pink-500 tracking-wide">
+            phonics
+          </h1>
+          <h1 class="text-xl md:text-2xl font-extrabold text-pink-500 tracking-wide -mt-1">
+            fun!
+          </h1>
+        </div>
+      </div>
+      
+      <!-- Center: 3 Game Modes inside pink pill container -->
+      <nav class="flex items-center bg-pink-100/80 p-1.5 rounded-full border-2 border-pink-200/80 shadow-inner gap-1 md:gap-2">
+        <button id="nav-game1" onclick="switchGame(1)" class="px-4 py-2 rounded-2xl text-xs md:text-sm font-extrabold transition-all duration-200 bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-md border-b-4 border-rose-700 active:translate-y-0.5 scale-105">
+          <div class="leading-tight">first</div>
+          <div class="leading-tight">letter</div>
+        </button>
+        <button id="nav-game2" onclick="switchGame(2)" class="px-4 py-2 rounded-2xl text-xs md:text-sm font-extrabold transition-all duration-200 text-pink-700 hover:bg-pink-200/70 border-b-4 border-transparent active:translate-y-0.5">
+          <div class="leading-tight">letter</div>
+          <div class="leading-tight">pop</div>
+        </button>
+        <button id="nav-game3" onclick="switchGame(3)" class="px-4 py-2 rounded-2xl text-xs md:text-sm font-extrabold transition-all duration-200 text-pink-700 hover:bg-pink-200/70 border-b-4 border-transparent active:translate-y-0.5">
+          <div class="leading-tight">memory</div>
+          <div class="leading-tight">match</div>
+        </button>
+      </nav>
+
+      <!-- Right: Audio Button & Star Counter -->
+      <div class="flex items-center gap-2.5">
+        <button onclick="speakCurrentWord()" class="w-11 h-11 bg-yellow-100 hover:bg-yellow-200 border-2 border-yellow-300 rounded-2xl flex items-center justify-center shadow-md text-lg active:scale-95 transition-all" title="Listen">
+          🔊
+        </button>
+        <div id="g-score-pill" class="bg-yellow-400 border-2 border-yellow-500 px-4 py-2 rounded-2xl shadow-md flex items-center gap-1.5 text-amber-950 font-extrabold text-lg">
+          ⭐ <span id="score-val">0</span>
+        </div>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- Main Game Container -->
+  <main class="max-w-4xl mx-auto px-4 py-2 flex-grow flex flex-col items-center justify-center w-full">
+
+    <!-- GAME 1: MISSING FIRST LETTER -->
+    <section id="game1-container" class="w-full flex flex-col items-center">
+      <div class="bg-amber-100 border-2 border-amber-300 text-amber-900 px-6 py-2 rounded-full font-bold text-center shadow-sm mb-4 text-base md:text-lg animate-bounce">
+        💡 look at the picture and click the missing first letter!
+      </div>
+
+      <div class="w-full max-w-xl bg-white rounded-3xl p-6 md:p-8 shadow-2xl border-4 border-pink-200 text-center relative flex flex-col items-center">
+        <!-- Progress Bar -->
+        <div class="w-full bg-gray-100 h-4 rounded-full mb-4 overflow-hidden border border-gray-200">
+          <div id="g1-progress" class="bg-gradient-to-r from-pink-500 to-purple-500 h-full transition-all duration-300" style="width: 10%"></div>
+        </div>
+
+        <div class="flex justify-between w-full font-bold text-sm text-pink-600 mb-2 px-2">
+          <span id="g1-round">round 1 of 10</span>
+        </div>
+
+        <!-- Picture Display -->
+        <div class="relative mb-6">
+          <div class="w-52 h-52 md:w-60 md:h-60 rounded-2xl border-4 border-pink-100 shadow-inner overflow-hidden bg-white flex items-center justify-center p-2">
+            <img id="g1-img" src="" alt="word picture" class="w-full h-full object-contain hover:scale-105 transition-transform">
+          </div>
+        </div>
+
+        <!-- Word Blanks Display -->
+        <div class="flex items-center justify-center gap-2 mb-6">
+          <span id="g1-blank" class="text-4xl md:text-6xl font-extrabold text-pink-600 border-b-4 border-pink-500 min-w-[50px] text-center pb-1">_</span>
+          <span id="g1-rest" class="text-4xl md:text-6xl font-extrabold text-slate-700 tracking-wide"></span>
+        </div>
+
+        <!-- Fixed Choices Grid (p, q, r, s, t) -->
+        <div class="grid grid-cols-5 gap-3 md:gap-4 w-full">
+          <button onclick="checkGame1Choice('p')" class="g1-btn bg-pink-400 hover:bg-pink-500 text-white text-2xl md:text-3xl font-extrabold py-3.5 rounded-2xl shadow-md border-b-4 border-pink-600 active:translate-y-1 transition-all">p</button>
+          <button onclick="checkGame1Choice('q')" class="g1-btn bg-purple-400 hover:bg-purple-500 text-white text-2xl md:text-3xl font-extrabold py-3.5 rounded-2xl shadow-md border-b-4 border-purple-600 active:translate-y-1 transition-all">q</button>
+          <button onclick="checkGame1Choice('r')" class="g1-btn bg-sky-400 hover:bg-sky-500 text-white text-2xl md:text-3xl font-extrabold py-3.5 rounded-2xl shadow-md border-b-4 border-sky-600 active:translate-y-1 transition-all">r</button>
+          <button onclick="checkGame1Choice('s')" class="g1-btn bg-emerald-400 hover:bg-emerald-500 text-white text-2xl md:text-3xl font-extrabold py-3.5 rounded-2xl shadow-md border-b-4 border-emerald-600 active:translate-y-1 transition-all">s</button>
+          <button onclick="checkGame1Choice('t')" class="g1-btn bg-amber-400 hover:bg-amber-500 text-white text-2xl md:text-3xl font-extrabold py-3.5 rounded-2xl shadow-md border-b-4 border-amber-600 active:translate-y-1 transition-all">t</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- GAME 2: LETTER POP -->
+    <section id="game2-container" class="w-full flex flex-col items-center hidden">
+      <div class="bg-purple-100 border-2 border-purple-300 text-purple-900 px-6 py-2 rounded-full font-bold text-center shadow-sm mb-4 text-base md:text-lg animate-bounce">
+        🎈 pop all bubbles that match the picture's first letter!
+      </div>
+
+      <div class="w-full max-w-xl bg-white rounded-3xl p-6 md:p-8 shadow-2xl border-4 border-purple-200 text-center flex flex-col items-center">
+        <!-- Progress Bar -->
+        <div class="w-full bg-gray-100 h-4 rounded-full mb-4 overflow-hidden border border-gray-200">
+          <div id="g2-progress" class="bg-gradient-to-r from-purple-500 to-indigo-500 h-full transition-all duration-300" style="width: 10%"></div>
+        </div>
+
+        <div class="flex justify-between w-full font-bold text-sm text-purple-600 mb-2 px-2">
+          <span id="g2-round">round 1 of 10</span>
+        </div>
+
+        <!-- Target Picture -->
+        <div class="relative mb-4">
+          <div class="w-44 h-44 md:w-52 md:h-52 rounded-2xl border-4 border-purple-100 shadow-inner overflow-hidden bg-white flex items-center justify-center p-2">
+            <img id="g2-img" src="" alt="target picture" class="w-full h-full object-contain">
+          </div>
+        </div>
+
+        <!-- Hint Text -->
+        <div class="mb-4 text-purple-700 font-bold bg-purple-50 border border-purple-200 px-4 py-1.5 rounded-xl">
+          pop all bubbles with the picture's first letter!
+        </div>
+
+        <!-- Bubble Grid Container -->
+        <div id="g2-bubble-grid" class="grid grid-cols-4 gap-3.5 w-full p-3 bg-indigo-50/50 rounded-2xl border-2 border-indigo-100 min-h-[190px] justify-items-center items-center">
+        </div>
+      </div>
+    </section>
+
+    <!-- GAME 3: MEMORY MATCH (PICTURE MATCHES WITH LETTER) -->
+    <section id="game3-container" class="w-full flex flex-col items-center hidden">
+      <div class="bg-pink-100 border-2 border-pink-300 text-pink-900 px-6 py-2 rounded-full font-bold text-center shadow-sm mb-4 text-base md:text-lg animate-bounce">
+        🧠 flip cards to match each picture with its starting letter!
+      </div>
+
+      <div class="w-full max-w-3xl bg-white rounded-3xl p-6 md:p-8 shadow-2xl border-4 border-pink-200 flex flex-col items-center">
+        <div class="flex justify-between items-center w-full mb-4 px-2 font-bold text-pink-600">
+          <span id="g3-matches">matches: 0 / 6</span>
+          <button onclick="initGame3()" class="bg-pink-500 hover:bg-pink-600 text-white px-4 py-1.5 rounded-full shadow-md text-sm transition-all hover:scale-105 active:scale-95">
+            🔄 new cards
+          </button>
+        </div>
+
+        <!-- Memory Cards Grid (3x4) -->
+        <div id="g3-grid" class="grid grid-cols-3 md:grid-cols-4 gap-3.5 md:gap-4 w-full justify-items-center justify-center">
+        </div>
+      </div>
+    </section>
+
+    <!-- REWARD / COMPLETION MODAL -->
+    <div id="reward-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+      <div class="bg-white rounded-3xl p-8 max-w-sm w-full text-center border-4 border-yellow-400 shadow-2xl animate-bounce">
+        <div class="text-6xl mb-2">🏆</div>
+        <h2 class="text-3xl font-extrabold text-pink-600 mb-1">super star!</h2>
+        <p class="text-gray-600 font-bold mb-4">you completed the game!</p>
+        <div class="text-4xl mb-4">⭐⭐⭐</div>
+        <button onclick="closeRewardModal()" class="w-full bg-gradient-to-r from-green-400 to-emerald-500 hover:from-green-500 hover:to-emerald-600 text-white text-xl font-bold py-3 rounded-2xl shadow-lg border-b-4 border-green-700 active:translate-y-1 transition-all">
+          play again! 🚀
+        </button>
+      </div>
+    </div>
+
+  </main>
+
+  <footer class="text-center text-xs text-pink-500/80 font-semibold py-2">
+    phonics fun! • p q r s t letter games
+  </footer>
+
+  <script>
+    const GAME_WORDS = [
+      { id: 'pen',   letter: 'p', rest: 'en',   img: 'https://img.freepik.com/premium-photo/blue-pen-white-background-isolated-form-document-generative-ai_94628-8441.jpg?w=2000' },
+      { id: 'pin',   letter: 'p', rest: 'in',   img: 'https://img.freepik.com/premium-vector/mobile_1031082-3700.jpg' },
+      { id: 'quail', letter: 'q', rest: 'uail', img: 'https://tse3.mm.bing.net/th/id/OIP.TC1wQhPTWr_zlmRn-Qi_XQHaHa?r=0&rs=1&pid=ImgDetMain&o=7&rm=3' },
+      { id: 'queen', letter: 'q', rest: 'ueen', img: 'https://tse2.mm.bing.net/th/id/OIP.jT1mjb-hEQJ28MqmKlVeHgHaHa?r=0&rs=1&pid=ImgDetMain&o=7&rm=3' },
+      { id: 'rat',   letter: 'r', rest: 'at',   img: 'https://static.vecteezy.com/system/resources/previews/013/463/631/large_2x/rat-isolated-on-white-background-photo.jpg' },
+      { id: 'rice',  letter: 'r', rest: 'ice',  img: 'https://static.vecteezy.com/system/resources/thumbnails/026/564/488/small_2x/stock-of-rice-foodgraphy-isolated-white-background-ai-generated-photo.jpg' },
+      { id: 'sea',   letter: 's', rest: 'ea',   img: 'https://tse2.mm.bing.net/th/id/OIP.egAvoBO_CE5Q_SvGHNfXfgHaE7?r=0&rs=1&pid=ImgDetMain&o=7&rm=3' },
+      { id: 'sock',  letter: 's', rest: 'ock',  img: 'https://tse1.mm.bing.net/th/id/OIP.3LAY-_XnY5NBQNlus-dEiwHaGn?r=0&rs=1&pid=ImgDetMain&o=7&rm=3' },
+      { id: 'toy',   letter: 't', rest: 'oy',   img: 'https://static.vecteezy.com/system/resources/previews/029/640/254/large_2x/toy-car-on-white-background-generative-ai-photo.jpg' },
+      { id: 'tea',   letter: 't', rest: 'ea',   img: 'https://tse4.mm.bing.net/th/id/OIP.3rYy3INcNRUsagAP-X7f3QHaHa?r=0&rs=1&pid=ImgDetMain&o=7&rm=3' }
+    ];
+
+    let currentGameMode = 1;
+    let shuffledDeck = [];
+    let currentWordIndex = 0;
+    let scoreStars = 0;
+    let g2RemainingTargets = 0;
+    let g3Cards = [];
+    let g3FlippedCards = [];
+    let g3MatchedCount = 0;
+
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    function playSound(type) {
+      if (audioCtx.state === 'suspended') { audioCtx.resume(); }
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      if (type === 'correct') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(523.25, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.2);
+        gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.25);
+      } else if (type === 'pop') {
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.08);
+        gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.08);
+      } else if (type === 'wrong') {
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(220, audioCtx.currentTime);
+        osc.frequency.linearRampToValueAtTime(130.81, audioCtx.currentTime + 0.2);
+        gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.25);
+      } else if (type === 'win') {
+        const notes = [523.25, 659.25, 783.99, 1046.50];
+        notes.forEach((freq, idx) => {
+          const o = audioCtx.createOscillator();
+          const g = audioCtx.createGain();
+          o.connect(g);
+          g.connect(audioCtx.destination);
+          o.frequency.value = freq;
+          g.gain.setValueAtTime(0.2, audioCtx.currentTime + idx * 0.1);
+          g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + idx * 0.1 + 0.2);
+          o.start(audioCtx.currentTime + idx * 0.1);
+          o.stop(audioCtx.currentTime + idx * 0.1 + 0.2);
+        });
+      }
+    }
+
+    function speakCurrentWord() {
+      const item = shuffledDeck[currentWordIndex];
+      if (!item) return;
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(item.id);
+        utterance.rate = 0.85;
+        utterance.pitch = 1.1;
+        window.speechSynthesis.speak(utterance);
+      }
+    }
+
+    function speakLetter(letter) {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(letter);
+        utterance.rate = 0.9;
+        window.speechSynthesis.speak(utterance);
+      }
+    }
+
+    function shuffleArray(arr) {
+      return [...arr].sort(() => Math.random() - 0.5);
+    }
+
+    function updateScoreDisplay() {
+      document.getElementById('score-val').innerText = scoreStars;
+    }
+
+    function switchGame(mode) {
+      currentGameMode = mode;
+      [1, 2, 3].forEach(m => {
+        const navBtn = document.getElementById(`nav-game${m}`);
+        const container = document.getElementById(`game${m}-container`);
+        if (m === mode) {
+          navBtn.className = "px-4 py-2 rounded-2xl text-xs md:text-sm font-extrabold transition-all duration-200 bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-md border-b-4 border-rose-700 active:translate-y-0.5 scale-105";
+          container.classList.remove('hidden');
+        } else {
+          navBtn.className = "px-4 py-2 rounded-2xl text-xs md:text-sm font-extrabold transition-all duration-200 text-pink-700 hover:bg-pink-200/70 border-b-4 border-transparent active:translate-y-0.5";
+          container.classList.add('hidden');
+        }
+      });
+
+      if (mode === 1) initGame1();
+      else if (mode === 2) initGame2();
+      else if (mode === 3) initGame3();
+    }
+
+    function initGame1() {
+      shuffledDeck = shuffleArray(GAME_WORDS);
+      currentWordIndex = 0;
+      scoreStars = 0;
+      updateScoreDisplay();
+      loadGame1Round();
+    }
+
+    function loadGame1Round() {
+      const item = shuffledDeck[currentWordIndex];
+      document.getElementById('g1-progress').style.width = `${((currentWordIndex + 1) / 10) * 100}%`;
+      document.getElementById('g1-round').innerText = `round ${currentWordIndex + 1} of 10`;
+
+      const imgElem = document.getElementById('g1-img');
+      imgElem.src = item.img;
+      imgElem.onerror = () => { imgElem.src = `https://via.placeholder.com/200?text=${item.id}`; };
+
+      const blankElem = document.getElementById('g1-blank');
+      blankElem.innerText = '_';
+      blankElem.className = "text-4xl md:text-6xl font-extrabold text-pink-600 border-b-4 border-pink-500 min-w-[50px] text-center pb-1";
+      document.getElementById('g1-rest').innerText = item.rest;
+
+      document.querySelectorAll('.g1-btn').forEach(btn => btn.disabled = false);
+      speakCurrentWord();
+    }
+
+    function checkGame1Choice(chosenLetter) {
+      const item = shuffledDeck[currentWordIndex];
+      const blankElem = document.getElementById('g1-blank');
+
+      if (chosenLetter === item.letter) {
+        playSound('correct');
+        blankElem.innerText = chosenLetter;
+        blankElem.className = "text-4xl md:text-6xl font-extrabold text-emerald-500 border-b-4 border-emerald-500 min-w-[50px] text-center pb-1 animate-bounce";
+        
+        scoreStars++;
+        updateScoreDisplay();
+        document.querySelectorAll('.g1-btn').forEach(btn => btn.disabled = true);
+
+        setTimeout(() => {
+          currentWordIndex++;
+          if (currentWordIndex >= 10) triggerWin();
+          else loadGame1Round();
+        }, 1200);
+      } else {
+        playSound('wrong');
+        blankElem.innerText = chosenLetter;
+        blankElem.className = "text-4xl md:text-6xl font-extrabold text-red-500 border-b-4 border-red-500 min-w-[50px] text-center pb-1";
+        setTimeout(() => {
+          blankElem.innerText = '_';
+          blankElem.className = "text-4xl md:text-6xl font-extrabold text-pink-600 border-b-4 border-pink-500 min-w-[50px] text-center pb-1";
+        }, 600);
+      }
+    }
+
+    function initGame2() {
+      shuffledDeck = shuffleArray(GAME_WORDS);
+      currentWordIndex = 0;
+      scoreStars = 0;
+      updateScoreDisplay();
+      loadGame2Round();
+    }
+
+    function loadGame2Round() {
+      const item = shuffledDeck[currentWordIndex];
+      document.getElementById('g2-progress').style.width = `${((currentWordIndex + 1) / 10) * 100}%`;
+      document.getElementById('g2-round').innerText = `round ${currentWordIndex + 1} of 10`;
+
+      const imgElem = document.getElementById('g2-img');
+      imgElem.src = item.img;
+      imgElem.onerror = () => { imgElem.src = `https://via.placeholder.com/200?text=${item.id}`; };
+
+      const grid = document.getElementById('g2-bubble-grid');
+      grid.innerHTML = '';
+
+      const lettersPool = ['p', 'q', 'r', 's', 't'];
+      const distractorPool = lettersPool.filter(l => l !== item.letter);
+      const bubbles = [];
+      const targetCount = 3 + Math.floor(Math.random() * 2);
+      g2RemainingTargets = targetCount;
+
+      for (let i = 0; i < targetCount; i++) {
+        bubbles.push({ letter: item.letter, isTarget: true });
+      }
+      while (bubbles.length < 8) {
+        bubbles.push({ letter: distractorPool[Math.floor(Math.random() * distractorPool.length)], isTarget: false });
+      }
+
+      const shuffledBubbles = shuffleArray(bubbles);
+
+      const availableColors = [
+        'bg-pink-400 border-pink-600 text-white',
+        'bg-purple-400 border-purple-600 text-white',
+        'bg-sky-400 border-sky-600 text-white',
+        'bg-emerald-400 border-emerald-600 text-white',
+        'bg-amber-400 border-amber-600 text-white',
+        'bg-rose-400 border-rose-600 text-white',
+        'bg-indigo-400 border-indigo-600 text-white',
+        'bg-teal-400 border-teal-600 text-white'
+      ];
+      const shuffledColors = shuffleArray(availableColors);
+
+      shuffledBubbles.forEach((bObj, idx) => {
+        const btn = document.createElement('button');
+        const bubbleColor = shuffledColors[idx % shuffledColors.length];
+        btn.className = `w-14 h-14 md:w-16 md:h-16 rounded-full ${bubbleColor} text-2xl md:text-3xl font-extrabold flex items-center justify-center border-b-4 shadow-lg animate-float hover:scale-110 active:scale-90 transition-all`;
+        btn.innerText = bObj.letter;
+
+        btn.onclick = () => {
+          if (bObj.isTarget) {
+            playSound('pop');
+            btn.classList.add('animate-pop');
+            btn.style.pointerEvents = 'none';
+            g2RemainingTargets--;
+
+            if (g2RemainingTargets === 0) {
+              playSound('correct');
+              scoreStars++;
+              updateScoreDisplay();
+              setTimeout(() => {
+                currentWordIndex++;
+                if (currentWordIndex >= 10) triggerWin();
+                else loadGame2Round();
+              }, 800);
+            }
+          } else {
+            playSound('wrong');
+            btn.classList.add('shake');
+            setTimeout(() => btn.classList.remove('shake'), 400);
+          }
+        };
+
+        grid.appendChild(btn);
+      });
+
+      speakCurrentWord();
+    }
+
+    /* GAME 3: MEMORY MATCH (PICTURE PAIRS WITH LETTER) */
+    function initGame3() {
+      g3MatchedCount = 0;
+      g3FlippedCards = [];
+      document.getElementById('g3-matches').innerText = `matches: 0 / 6`;
+
+      // Select 6 words to build picture + starting letter pairs
+      const selectedWords = shuffleArray(GAME_WORDS).slice(0, 6);
+      const deck = [];
+      selectedWords.forEach((w, i) => {
+        deck.push({ pairId: i, type: 'picture', content: w.img, label: w.id });
+        deck.push({ pairId: i, type: 'letter', content: w.letter, label: w.id });
+      });
+
+      g3Cards = shuffleArray(deck);
+      renderGame3Grid();
+    }
+
+    function renderGame3Grid() {
+      const grid = document.getElementById('g3-grid');
+      grid.innerHTML = '';
+
+      g3Cards.forEach((card, index) => {
+        const cardElem = document.createElement('div');
+        cardElem.className = "w-24 h-28 md:w-32 md:h-36 perspective cursor-pointer";
+
+        cardElem.innerHTML = `
+          <div id="g3-card-inner-${index}" class="w-full h-full relative transform-style-3d transition-transform duration-500 rounded-2xl shadow-md border-2 border-pink-200">
+            <!-- Front Face (Hidden) -->
+            <div class="absolute inset-0 w-full h-full bg-gradient-to-br from-pink-400 to-purple-500 rounded-2xl flex items-center justify-center text-white text-3xl font-bold backface-hidden shadow-inner">
+              ❓
+            </div>
+            <!-- Back Face (Reveals Picture or Letter) -->
+            <div class="absolute inset-0 w-full h-full bg-white rounded-2xl border-2 border-pink-400 flex flex-col items-center justify-center p-2 backface-hidden rotate-y-180">
+              ${card.type === 'picture' 
+                ? `<img src="${card.content}" class="w-full h-20 md:h-24 object-contain" onerror="this.src='https://via.placeholder.com/100?text=${card.label}'">`
+                : `<span class="text-4xl md:text-5xl font-extrabold text-pink-600">${card.content}</span>`
+              }
+            </div>
+          </div>
+        `;
+
+        cardElem.onclick = () => flipGame3Card(index);
+        grid.appendChild(cardElem);
+      });
+    }
+
+    function flipGame3Card(index) {
+      if (g3FlippedCards.length >= 2 || g3FlippedCards.includes(index)) return;
+
+      const inner = document.getElementById(`g3-card-inner-${index}`);
+      inner.classList.add('rotate-y-180');
+      g3FlippedCards.push(index);
+
+      const cardData = g3Cards[index];
+      if (cardData.type === 'letter') speakLetter(cardData.content);
+      else speakLetter(cardData.label);
+
+      if (g3FlippedCards.length === 2) {
+        const [idx1, idx2] = g3FlippedCards;
+        const card1 = g3Cards[idx1];
+        const card2 = g3Cards[idx2];
+
+        // Ensure 1 Picture Card matches with 1 Letter Card for the same item pair
+        if (card1.pairId === card2.pairId && card1.type !== card2.type) {
+          playSound('correct');
+          g3MatchedCount++;
+          document.getElementById('g3-matches').innerText = `matches: ${g3MatchedCount} / 6`;
+          g3FlippedCards = [];
+
+          if (g3MatchedCount >= 6) {
+            setTimeout(triggerWin, 800);
+          }
+        } else {
+          playSound('wrong');
+          setTimeout(() => {
+            document.getElementById(`g3-card-inner-${idx1}`).classList.remove('rotate-y-180');
+            document.getElementById(`g3-card-inner-${idx2}`).classList.remove('rotate-y-180');
+            g3FlippedCards = [];
+          }, 1000);
+        }
+      }
+    }
+
+    function triggerWin() {
+      playSound('win');
+      if (typeof confetti === 'function') {
+        confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
+      }
+      document.getElementById('reward-modal').classList.remove('hidden');
+    }
+
+    function closeRewardModal() {
+      document.getElementById('reward-modal').classList.add('hidden');
+      switchGame(currentGameMode);
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      initGame1();
+    });
+  </script>
+</body>
+</html>
